@@ -9,15 +9,25 @@ import (
 	"github.com/google/uuid"
 )
 
-func redisConnection() *redis.Client {
+func redisConnection() (*redis.Client, error) {
 	rd := redis.NewClient(&redis.Options{})
-	return rd
+	pong := rd.Ping()
+
+	if pong.Val() == "PONG" {
+		return rd, nil
+	} else {
+		return nil, fmt.Errorf("error to connect to redis")
+	}
 }
 
 // CreateSession cria sessao de um usuario
 func CreateSession() (map[string]string, error) {
-	rd := redisConnection()
+	rd, err := redisConnection()
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer rd.Close()
+
 	sessionID := uuid.New()
 	userID := uuid.New()
 	thirtyMinutes := time.Duration(time.Minute * 30)
